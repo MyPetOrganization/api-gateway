@@ -1,1 +1,2 @@
 export const USER_SERVICE = 'USER_SERVICE';
+export const CARDS_SERVICE = 'CARDS_SERVICE';

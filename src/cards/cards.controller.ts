@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateCardDto } from './dto/create-cards.dto';
 import { UpdateCardDto } from './dto/update-cards.dto';
 import { NATS_SERVICE } from 'src/config';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @Controller('cards')
 export class CardsController {
@@ -19,6 +20,7 @@ export class CardsController {
     return this.client.send({ cmd: 'create-card' }, { id, createCardDto });
   }
 
+  @UseGuards(AuthGuard)
   @Get(':id')
   findAllCards(
     @Param('id', ParseIntPipe) id: number,
@@ -26,6 +28,7 @@ export class CardsController {
     return this.client.send({ cmd: 'get_all_cards' }, { id });
   }
 
+  @UseGuards(AuthGuard)
   @Post('fo/:id')
   findOneCard(
     @Param('id', ParseIntPipe) id: number,
@@ -42,6 +45,7 @@ export class CardsController {
     return this.client.send({ cmd: 'delete_card' }, { id, cardNumber });
   }
 
+  @UseGuards(AuthGuard)
   @Patch(':id')
   updateCard(
     @Param('id', ParseIntPipe) id: number,

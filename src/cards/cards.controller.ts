@@ -2,11 +2,12 @@ import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateCardDto } from './dto/create-cards.dto';
 import { UpdateCardDto } from './dto/update-cards.dto';
+import { NATS_SERVICE } from 'src/config';
 
 @Controller('cards')
 export class CardsController {
   constructor(
-    @Inject('CARDS_SERVICE') private readonly cardsClient: ClientProxy,
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
   ) {}
 
   @Post(':id')
@@ -15,14 +16,14 @@ export class CardsController {
     @Param('id', ParseIntPipe) id: number,	
   ) {
     console.log('createCardDto', createCardDto);
-    return this.cardsClient.send({ cmd: 'create-card' }, { id, createCardDto });
+    return this.client.send({ cmd: 'create-card' }, { id, createCardDto });
   }
 
   @Get(':id')
   findAllCards(
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.cardsClient.send({ cmd: 'get_all_cards' }, { id });
+    return this.client.send({ cmd: 'get_all_cards' }, { id });
   }
 
   @Post('fo/:id')
@@ -30,7 +31,7 @@ export class CardsController {
     @Param('id', ParseIntPipe) id: number,
     @Body('cardNumber', ParseIntPipe) cardNumber: number,
   ) {
-    return this.cardsClient.send({ cmd: 'get_one_card' }, { id, cardNumber });
+    return this.client.send({ cmd: 'get_one_card' }, { id, cardNumber });
   }
 
   @Delete(':id')
@@ -38,7 +39,7 @@ export class CardsController {
     @Param('id', ParseIntPipe) id: number,
     @Body('cardNumber', ParseIntPipe) cardNumber: number,
   ) {
-    return this.cardsClient.send({ cmd: 'delete_card' }, { id, cardNumber });
+    return this.client.send({ cmd: 'delete_card' }, { id, cardNumber });
   }
 
   @Patch(':id')
@@ -46,7 +47,7 @@ export class CardsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCardDto: UpdateCardDto,
   ) {
-    return this.cardsClient.send({ cmd: 'update_card' }, { id, updateCardDto });
+    return this.client.send({ cmd: 'update_card' }, { id, updateCardDto });
   }
 
 }

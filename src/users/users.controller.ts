@@ -4,11 +4,12 @@ import { firstValueFrom } from 'rxjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { NATS_SERVICE } from 'src/config';
 
 @Controller('users')
 export class UsersController {
   constructor(
-    @Inject('USER_SERVICE') private readonly usersClient: ClientProxy,
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
   ) {}
 
     @Post()
@@ -17,18 +18,18 @@ export class UsersController {
       @Body() createUserDto: CreateUserDto,
       @UploadedFile() image?: Express.Multer.File,
     ) {
-      return this.usersClient.send({ cmd: 'create_user' }, {createUserDto, image});
+      return this.client.send({ cmd: 'create_user' }, {createUserDto, image});
     }
 
     @Get()
     findAllUsers() {
-      return this.usersClient.send({ cmd: 'get_all_users' }, {});
+      return this.client.send({ cmd: 'get_all_users' }, {});
     }
     
     @Get(':id')
     async findOneUser(@Param('id') id: string) {
       const user = await firstValueFrom(
-        this.usersClient.send({ cmd: 'get_one_user' }, { id })
+        this.client.send({ cmd: 'get_one_user' }, { id })
       )
       return user;
     }
@@ -40,11 +41,11 @@ export class UsersController {
       @Body() updateUserDto: UpdateUserDto,
       @UploadedFile() image?: Express.Multer.File,
     ) {
-      return this.usersClient.send({ cmd: 'update_user' }, { id, updateUserDto, image });
+      return this.client.send({ cmd: 'update_user' }, { id, updateUserDto, image });
     }
 
     @Delete(':id')
     deleteUser(@Param('id') id: string) {
-      return this.usersClient.send({ cmd: 'delete_user' }, { id });
+      return this.client.send({ cmd: 'delete_user' }, { id });
     }
 }

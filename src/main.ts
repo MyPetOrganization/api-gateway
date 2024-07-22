@@ -7,9 +7,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: envs.clientUrl, // Reemplaza con tu dominio permitido
+    origin: envs.clientUrl,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // Permitir cookies u otras credenciales
+    credentials: true,
   });
 
   app.setGlobalPrefix('api');

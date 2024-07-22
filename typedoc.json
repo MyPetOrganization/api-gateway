@@ -1,0 +1,10 @@
+{
+    "entryPoints": ["src/main.ts"],
+    "out": "docs",
+    "includeVersion": true,
+    "excludePrivate": true,
+    "excludeProtected": true,
+    "excludeExternals": true,
+    "excludeNotDocumented": true
+}
+  

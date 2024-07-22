@@ -6,17 +6,21 @@ interface EnvVars {
     PORT: number;
     NATS_SERVERS: string;
     CLIENT_URL: string;
+    LOGTAIL_TOKEN: string;
 }
 
 const envsSchema = joi.object({
     PORT: joi.number().required(),
     NATS_SERVERS: joi.string().required(),
     CLIENT_URL: joi.string().required(),
+    LOGTAIL_TOKEN: joi.string().required(),
 }).unknown(true);
 
 const { error, value } = envsSchema.validate({ 
     ...process.env,
-    NATS_SERVERS: process.env.NATS_SERVERS, 
+    NATS_SERVERS: process.env.NATS_SERVERS,
+    CLIENT_URL: process.env.CLIENT_URL,
+    LOGTAIL_TOKEN: process.env.LOGTAIL_TOKEN, 
 });
 
 Logger.log(error, 'NATS ERROR');
@@ -27,4 +31,5 @@ export const envs = {
     port: envVars.PORT,
     natsServers: envVars.NATS_SERVERS,
     clientUrl: envVars.CLIENT_URL,
+    logtailToken: envVars.LOGTAIL_TOKEN,
 }

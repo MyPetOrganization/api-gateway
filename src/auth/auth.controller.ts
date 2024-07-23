@@ -28,12 +28,11 @@ export class AuthController {
   async registerUser(@Req() req: Request, @Body() registerUserDto: RegisterUserDto) {
     // Recontruct the full URL of the request.
     const url = "http://" + req.headers['host'] + req.url;
-    const user = await firstValueFrom(this.client.send({ cmd: 'auth_register_user' }, registerUserDto));
-    // If the user is not found, throw an error
-    if(!user) {
+    const user = await firstValueFrom(this.client.send({ cmd: 'auth_register_user' }, registerUserDto))
+    .catch((error) => {
       this.logtailService.error(`User ${registerUserDto.email} with ${ registerUserDto.role } role isn't registered - ${url}`, 'register user');
-      throw new RpcException('User not found');
-    };
+      throw new RpcException('Could not register user');
+    });
     // Log the registration in betterstack.
     this.logtailService.log(`User ${registerUserDto.email} with ${ registerUserDto.role } role is registered - ${url}`);
     return user;
@@ -49,12 +48,12 @@ export class AuthController {
   async loginUser(@Req() req:Request, @Body() loginUserDto: LoginUserDto) {
     const url = "http://" + req.headers['host'] + req.url;
     // Get the user from the microservice
-    const user = await firstValueFrom(this.client.send({ cmd: 'auth_login_user' }, loginUserDto));
-    // If the user is not found, throw an error
-    if(!user) {
+    const user = await firstValueFrom(this.client.send({ cmd: 'auth_login_user' }, loginUserDto))
+    .catch((error) => {
       this.logtailService.error(`User ${loginUserDto.email} with ${ loginUserDto.role } role, invalid credentials - ${url}`, 'login user');
-      throw new RpcException('User not found');
-    };
+      throw new RpcException('Invalid credentials');
+    });
+
     this.logtailService.log(`User ${loginUserDto.email} with ${ loginUserDto.role } role is logged - ${url}`);
     return user;
   }

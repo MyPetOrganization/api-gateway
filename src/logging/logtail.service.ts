@@ -2,31 +2,43 @@ import { Injectable, LoggerService } from '@nestjs/common';
 import { Logtail } from '@logtail/node';
 import { envs } from 'src/config';
 
+/**
+ * Service for logging on better stack.
+ */
 @Injectable()
 export class LogginService implements LoggerService {
   private logtail: Logtail;
 
   constructor() {
+    // Create a new logtail instance with the logtail token.
     this.logtail = new Logtail(envs.logtailToken);
   }
 
+  /**
+   * Get the current timestamp.
+   * @returns The current timestamp.
+   */
   private getCurrentTimestamp(): string {
     return new Date().toISOString();
   }
 
-  log(message: string, ip?: string) {
+  /**
+   * Log a message.
+   * @param message - The message to log. 
+   */
+  log(message: string) {
     this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'INFO');
   }
 
-  error(message: string, trace: string, ip?: string) {
-    this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'ERROR', { trace });
+  error(message: string, trace: string) {
+    this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'ERROR');
   }
 
-  warn(message: string, ip?: string) {
+  warn(message: string) {
     this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'WARN');
   }
 
-  debug(message: string, ip?: string) {
+  debug(message: string,) {
     this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'DEBUG');
   }
 

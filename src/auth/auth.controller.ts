@@ -9,7 +9,7 @@ import { Token, User } from './decorators';
 import { LogginService } from 'src/logging/logtail.service';
 
 /**
- * Controlador principal para manejar las peticiones relacionadas con la autenticación.
+ * Controller for the authentication routes.
  */
 @Controller('auth')
 export class AuthController {
@@ -18,37 +18,60 @@ export class AuthController {
     private readonly logtailService: LogginService
   ) {}
 
+  /**
+   * Register a new user.
+   * @param req - The HTTP request.
+   * @param registerUserDto - The data to register the user.
+   * @returns A promise that resolves with the response of the registration.
+   */
   @Post('register')
   async registerUser(@Req() req: Request, @Body() registerUserDto: RegisterUserDto) {
+    // Recontruct the full URL of the request.
     const url = "http://" + req.headers['host'] + req.url;
-    this.logtailService.log(`User ${registerUserDto.email} with ${ registerUserDto.role } role is registering - ${url}`);
-    return this.client.send({ cmd: 'auth_register_user' }, registerUserDto)
-  }
-
-  @Post('login')
-  async loginUser(@Req() req:Request, @Body() loginUserDto: LoginUserDto) {
-    const user = await firstValueFrom(this.client.send({ cmd: 'auth_login_user' }, loginUserDto));
+    const user = await firstValueFrom(this.client.send({ cmd: 'auth_register_user' }, registerUserDto));
+    // If the user is not found, throw an error
     if(!user) {
+      this.logtailService.error(`User ${registerUserDto.email} with ${ registerUserDto.role } role isn't registered - ${url}`, 'register user');
       throw new RpcException('User not found');
     };
+    // Log the registration in betterstack.
+    this.logtailService.log(`User ${registerUserDto.email} with ${ registerUserDto.role } role is registered - ${url}`);
+    return user;
+  }
+
+  /**
+   * Login a user.
+   * @param req - The HTTP request.
+   * @param loginUserDto - The data to login the user.
+   * @returns A promise that resolves with the response of the login.
+   */
+  @Post('login')
+  async loginUser(@Req() req:Request, @Body() loginUserDto: LoginUserDto) {
     const url = "http://" + req.headers['host'] + req.url;
+    // Get the user from the microservice
+    const user = await firstValueFrom(this.client.send({ cmd: 'auth_login_user' }, loginUserDto));
+    // If the user is not found, throw an error
+    if(!user) {
+      this.logtailService.error(`User ${loginUserDto.email} with ${ loginUserDto.role } role, invalid credentials - ${url}`, 'login user');
+      throw new RpcException('User not found');
+    };
     this.logtailService.log(`User ${loginUserDto.email} with ${ loginUserDto.role } role is logged - ${url}`);
     return user;
   }
 
   /**
-   * Verifica el token del usuario.
-   * 
-   * @param req - La solicitud HTTP.
-   * @param user - El usuario actual.
-   * @param token - El token a verificar.
-   * @returns Una promesa que resuelve con la respuesta de la verificación del token.
+   * Verify a token.
+   * @param req - The HTTP request.
+   * @param user - The current user.
+   * @param token - The token to verify.
+   * @returns A promise that resolves with the response of the verification.
   */
   @UseGuards(AuthGuard)
   @Get('verify')
   async verifyToken(@Req() req:Request ,@User() user: CurrentUser, @Token() token: string){
-    // Construye la URL completa de la solicitud.
+    // Reconstruc the full URL of the request.
     const url = "http://" + req.headers['host'] + req.url;
+    // Log the token validation in betterstack.
     this.logtailService.log(`User ${user.email}, ${ user.role } role - ${url} - Validated Token`);
     return this.client.send({ cmd: 'auth_verify_user' }, {token});
   }

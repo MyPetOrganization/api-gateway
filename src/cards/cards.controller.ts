@@ -1,43 +1,80 @@
 import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { CreateCardDto } from './dto/create-cards.dto';
 import { UpdateCardDto } from './dto/update-cards.dto';
 import { NATS_SERVICE } from 'src/config';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom } from 'rxjs';
 import { LogginService } from 'src/logging/logtail.service';
 
+/**
+ * Controller for the cards routes.
+ */
 @Controller('cards')
 export class CardsController {
   constructor(
     @Inject(NATS_SERVICE) private readonly client: ClientProxy,
     private readonly logtailService: LogginService
   ) {}
-
+  
+  /**
+   * Create a new card.
+   * @param req - The HTTP request.
+   * @param createCardDto - The data to create the card.
+   * @param id - The id of the user.
+   * @returns A promise that resolves with the response of the creation.
+   */
   @Post(':id')
   async createCard(
     @Req() req: Request,
     @Body() createCardDto: CreateCardDto,
     @Param('id', ParseIntPipe) id: number,	
   ) {
+    // Get the user from the microservice
     const user = await firstValueFrom( this.client.send({ cmd: 'get_one_user' }, { id }) );
+    // Reconstruct the full URL of the request
     const url = "http://" + req.headers['host'] + req.url;
+    // Create the card
+    const card = await firstValueFrom( this.client.send({ cmd: 'create_card' }, { id, createCardDto }) );
+    // Verify if the card was created
+    if(!card) {
+      this.logtailService.error(`${user.name} cannot create a card - ${url}`, 'create card');
+      throw new RpcException('Card not found');
+    }
+    // Log the creation in betterstack
     this.logtailService.log(`Creating a new card for user ${user.name} - ${url}`);
-    return this.client.send({ cmd: 'create-card' }, { id, createCardDto });
+    return card;
   }
 
+  /**
+   * Get all cards.
+   * @param req - The HTTP request.
+   * @param id - The id of the user.
+   * @returns A promise that resolves with the response of the retrieval.
+   */
   @UseGuards(AuthGuard)
   @Get(':id')
   async findAllCards(
     @Req() req: Request,
     @Param('id', ParseIntPipe) id: number,
-  ) {
+  ) {  
     const user = await firstValueFrom( this.client.send({ cmd: 'get_one_user' }, { id }) );
     const url = "http://" + req.headers['host'] + req.url;
     this.logtailService.log(`Getting all cards for user ${user.name}, ${user.email} - ${url}`);
-    return this.client.send({ cmd: 'get_all_cards' }, { id });
+    return this.client.send({ cmd: 'get_all_cards' }, { id })
+    .pipe(catchError(() => {
+      this.logtailService.error(`User ${user.name}, ${user.email} cannot get the cards - ${url}`, 'get all cards');
+      throw new RpcException('Error getting cards');
+    }));
   }
 
+  /**
+   * Get one card.
+   * @param req - The HTTP request.
+   * @param id - The id of the user.
+   * @param cardNumber - The card number.
+   * @returns A promise that resolves with the response of the retrieval.
+   */
   @UseGuards(AuthGuard)
   @Post('fo/:id')
   async findOneCard(
@@ -47,10 +84,22 @@ export class CardsController {
   ) {
     const user = await firstValueFrom( this.client.send({ cmd: 'get_one_user' }, { id }) );
     const url = "http://" + req.headers['host'] + req.url;
+    const card = await firstValueFrom( this.client.send({ cmd: 'get_one_card' }, { id, cardNumber }) );
+    if(!card) {
+      this.logtailService.error(`Card ${cardNumber} for user ${user.name}, ${user.email} not found - ${url}`, 'get one card');
+      throw new RpcException('Card not found');
+    }
     this.logtailService.log(`Getting ${cardNumber} card for user ${user.name}, ${user.email} - ${url}`);
-    return this.client.send({ cmd: 'get_one_card' }, { id, cardNumber });
+    return card;
   }
 
+  /**
+   * Delete a card.
+   * @param req - The HTTP request.
+   * @param id - The id of the user.
+   * @param cardNumber - The card number.
+   * @returns A promise that resolves with the response of the deletion.
+   */
   @Delete(':id')
   async removeCard(
     @Req() req: Request,
@@ -60,9 +109,20 @@ export class CardsController {
     const user = await firstValueFrom( this.client.send({ cmd: 'get_one_user' }, { id }) );
     const url = "http://" + req.headers['host'] + req.url;
     this.logtailService.log(`Deleting ${cardNumber} card for user ${user.name}, ${user.email} - ${url}`);
-    return this.client.send({ cmd: 'delete_card' }, { id, cardNumber });
+    return this.client.send({ cmd: 'delete_card' }, { id, cardNumber })
+    .pipe(catchError(() => {
+      this.logtailService.error(`User ${user.name}, ${user.email} cannot delete the card ${cardNumber} - ${url}`, 'delete card');
+      throw new RpcException('Error deleting card');
+    }));
   }
 
+  /**
+   * Update a card.
+   * @param req - The HTTP request.
+   * @param id - The id of the user.
+   * @param updateCardDto - The data to update the card.
+   * @returns A promise that resolves with the response of the update.
+   */
   @UseGuards(AuthGuard)
   @Patch(':id')
   async updateCard(
@@ -72,8 +132,13 @@ export class CardsController {
   ) {
     const user = await firstValueFrom( this.client.send({ cmd: 'get_one_user' }, { id }) );
     const url = "http://" + req.headers['host'] + req.url;
+    const card = await firstValueFrom( this.client.send({ cmd: 'update_card' }, { id, updateCardDto }));
+    if(!card) {
+      this.logtailService.error(`User ${user.name}, ${user.email} cannot delete the card ${updateCardDto.cardNumber} - ${url}`, 'update card');
+      throw new RpcException('Card not found');
+    }
     this.logtailService.log(`Updating ${updateCardDto.cardNumber} card for user ${user.name}, ${user.email} - ${url}`);
-    return this.client.send({ cmd: 'update_card' }, { id, updateCardDto });
+    return card;
   }
 
 }

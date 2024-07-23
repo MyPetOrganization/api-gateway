@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { envs } from './config';
 
+// Create the API GATEWAY to handle all the requests.
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 

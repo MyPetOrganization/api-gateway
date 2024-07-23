@@ -30,7 +30,7 @@ export class LogginService implements LoggerService {
     this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'INFO');
   }
 
-  error(message: string, trace: string) {
+  error(message: string) {
     this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'ERROR');
   }
 
@@ -42,7 +42,7 @@ export class LogginService implements LoggerService {
     this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'DEBUG');
   }
 
-  verbose(message: string, ip?: string) {
+  verbose(message: string) {
     this.logtail.log(`${this.getCurrentTimestamp()} - ${message}`, 'VERBOSE');
   }
 }

@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Inject, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 import { LoginUserDto, RegisterUserDto } from './dto';
-import { catchError, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { AuthGuard } from './guards/auth.guard';
 import { CurrentUser } from './interfaces/current-user.interface';
 import { Token, User } from './decorators';
@@ -29,9 +29,8 @@ export class AuthController {
     // Recontruct the full URL of the request.
     const url = "http://" + req.headers['host'] + req.url;
     const user = await firstValueFrom(this.client.send({ cmd: 'auth_register_user' }, registerUserDto))
-    .catch((error) => {
-      this.logtailService.error(`User ${registerUserDto.email} with ${ registerUserDto.role } role isn't registered - ${url}`, 'register user');
-      throw new RpcException('Could not register user');
+    .catch(() => {
+      this.logtailService.error(`User ${registerUserDto.email} with ${ registerUserDto.role } role isn't registered - ${url}`);
     });
     // Log the registration in betterstack.
     this.logtailService.log(`User ${registerUserDto.email} with ${ registerUserDto.role } role is registered - ${url}`);
@@ -49,8 +48,8 @@ export class AuthController {
     const url = "http://" + req.headers['host'] + req.url;
     // Get the user from the microservice
     const user = await firstValueFrom(this.client.send({ cmd: 'auth_login_user' }, loginUserDto))
-    .catch((error) => {
-      this.logtailService.error(`User ${loginUserDto.email} with ${ loginUserDto.role } role, invalid credentials - ${url}`, 'login user');
+    .catch(() => {
+      this.logtailService.error(`User ${loginUserDto.email} with ${ loginUserDto.role } role, invalid credentials - ${url}`);
       throw new RpcException('Invalid credentials');
     });
 

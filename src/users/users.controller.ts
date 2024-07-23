@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { catchError, firstValueFrom } from 'rxjs';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -35,7 +35,7 @@ export class UsersController {
     const url = "http://" + req.headers['host'] + req.url;
     const user = await firstValueFrom(this.client.send({ cmd: 'create_user' }, { createUserDto, image }))
       .catch(() => {
-        this.logtailService.error(`User ${createUserDto.email} with ${createUserDto.role} role isn't registered - ${url}`, 'register user');
+        this.logtailService.error(`User ${createUserDto.email} with ${createUserDto.role} role isn't registered - ${url}`);
         throw new RpcException('Error creating user');
       });
     this.logtailService.log(`Creating a new user ${createUserDto.name}, ${createUserDto.email} and ${createUserDto.role}  - ${url}`);
@@ -102,7 +102,7 @@ export class UsersController {
     const url = "http://" + req.headers['host'] + req.url;
     const user = firstValueFrom(this.client.send({ cmd: 'update_user' }, { id, updateUserDto, image }))
     .catch(() => {
-      this.logtailService.error(`Cannot update user with name ${updateUserDto.name} and ${updateUserDto.role} role - ${url}`, 'update user');
+      this.logtailService.error(`Cannot update user with name ${updateUserDto.name} and ${updateUserDto.role} role - ${url}`);
       throw new RpcException('User not found');
     });
     this.logtailService.log(`Updated user with name ${updateUserDto.name} and ${updateUserDto.role} role - ${url}`);
@@ -122,7 +122,7 @@ export class UsersController {
     this.logtailService.log(`Deleted ${user.name} user with ${user.email} email and ${user.role} role - ${url}`);
     return this.client.send({ cmd: 'delete_user' }, { id })
       .pipe(catchError(() => {
-        this.logtailService.error(`Cannot delete user with name ${user.name} and ${user.email} email - ${url}`, 'delete user');
+        this.logtailService.error(`Cannot delete user with name ${user.name} and ${user.email} email - ${url}`);
         throw new RpcException('Error deleting user');
       }));
   }

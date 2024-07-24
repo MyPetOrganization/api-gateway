@@ -1,5 +1,5 @@
 import { Transform } from "class-transformer";
-import { IsDate, IsNumber, IsString, Matches, MaxLength, MinLength} from "class-validator";
+import { IsDate, IsNumber, IsString, Matches, Max, MaxLength, Min, MinLength} from "class-validator";
 
 /**
  * Data transfer object for create card
@@ -8,11 +8,11 @@ export class CreateCardDto {
 
     /**
      * Card number
-     * Verify that the card number is a number
+     * Verify that the card number
      * @example 1234567890123456
      */
-    @IsNumber()
-    cardNumber: number;
+    @IsString()
+    cardNumber: string;
 
     /** 
      * Card name
@@ -34,7 +34,6 @@ export class CreateCardDto {
         const [month, year] = value.split('/');
         return new Date(`${year}-${month}-01`);
     })
-    @IsDate()
     expirationDate: Date;
 
     /**

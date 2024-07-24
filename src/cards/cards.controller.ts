@@ -4,7 +4,7 @@ import { CreateCardDto } from './dto/create-cards.dto';
 import { UpdateCardDto } from './dto/update-cards.dto';
 import { NATS_SERVICE } from 'src/config';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { catchError, firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, lastValueFrom, toArray } from 'rxjs';
 import { LogginService } from 'src/logging/logtail.service';
 
 /**
@@ -24,6 +24,7 @@ export class CardsController {
    * @param id - The id of the user.
    * @returns A promise that resolves with the response of the creation.
    */
+  @UseGuards(AuthGuard)
   @Post(':id')
   async createCard(
     @Req() req: Request,
@@ -34,12 +35,13 @@ export class CardsController {
     const user = await firstValueFrom(this.client.send({ cmd: 'get_one_user' }, { id }));
     // Reconstruct the full URL of the request
     const url = "http://" + req.headers['host'] + req.url;
+
     // Create the card
     const card = await firstValueFrom(this.client.send({ cmd: 'create_card' }, { id, createCardDto }))
-      .catch(() => {
-        this.logtailService.error(`${user.name} cannot create a card - ${url}`);
-        throw new RpcException('Card not found');
-      });
+      // .catch(() => {
+      //   this.logtailService.error(`${user.name} cannot create a card - ${url}`);
+      //   throw new RpcException('Cannot create a card');
+      // });
 
     // Log the creation in betterstack
     this.logtailService.log(`Creating a new card for user ${user.name} - ${url}`);
@@ -62,10 +64,10 @@ export class CardsController {
     const url = "http://" + req.headers['host'] + req.url;
     this.logtailService.log(`Getting all cards for user ${user.name}, ${user.email} - ${url}`);
     return this.client.send({ cmd: 'get_all_cards' }, { id })
-      .pipe(catchError(() => {
-        this.logtailService.error(`User ${user.name}, ${user.email} cannot get the cards - ${url}`);
-        throw new RpcException('Error getting cards');
-      }));
+      // .pipe(catchError(() => {
+      //   this.logtailService.error(`User ${user.name}, ${user.email} cannot get the cards - ${url}`);
+      //   throw new RpcException('Error getting cards');
+      // }));
   }
 
   /**
@@ -80,7 +82,7 @@ export class CardsController {
   async findOneCard(
     @Req() req: Request,
     @Param('id', ParseIntPipe) id: number,
-    @Body('cardNumber', ParseIntPipe) cardNumber: number,
+    @Body('cardNumber') cardNumber: string,
   ) {
     const user = await firstValueFrom(this.client.send({ cmd: 'get_one_user' }, { id }));
     const url = "http://" + req.headers['host'] + req.url;
@@ -104,7 +106,7 @@ export class CardsController {
   async removeCard(
     @Req() req: Request,
     @Param('id', ParseIntPipe) id: number,
-    @Body('cardNumber', ParseIntPipe) cardNumber: number,
+    @Body('cardNumber') cardNumber: string,
   ) {
     const user = await firstValueFrom(this.client.send({ cmd: 'get_one_user' }, { id }));
     const url = "http://" + req.headers['host'] + req.url;

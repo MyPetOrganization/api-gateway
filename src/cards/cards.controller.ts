@@ -37,7 +37,7 @@ export class CardsController {
     // Create the card
     const card = await firstValueFrom(this.client.send({ cmd: 'create_card' }, { id, createCardDto }))
       .catch(() => {
-        this.logtailService.error(`${user.name} cannot create a card - ${url}`, 'create card');
+        this.logtailService.error(`${user.name} cannot create a card - ${url}`);
         throw new RpcException('Card not found');
       });
 
@@ -63,7 +63,7 @@ export class CardsController {
     this.logtailService.log(`Getting all cards for user ${user.name}, ${user.email} - ${url}`);
     return this.client.send({ cmd: 'get_all_cards' }, { id })
       .pipe(catchError(() => {
-        this.logtailService.error(`User ${user.name}, ${user.email} cannot get the cards - ${url}`, 'get all cards');
+        this.logtailService.error(`User ${user.name}, ${user.email} cannot get the cards - ${url}`);
         throw new RpcException('Error getting cards');
       }));
   }
@@ -86,7 +86,7 @@ export class CardsController {
     const url = "http://" + req.headers['host'] + req.url;
     const card = await firstValueFrom(this.client.send({ cmd: 'get_one_card' }, { id, cardNumber }))
       .catch(() => {
-        this.logtailService.error(`Card ${cardNumber} for user ${user.name}, ${user.email} not found - ${url}`, 'get one card');
+        this.logtailService.error(`Card ${cardNumber} for user ${user.name}, ${user.email} not found - ${url}`);
         throw new RpcException('Card not found');
       });
     this.logtailService.log(`Getting ${cardNumber} card for user ${user.name}, ${user.email} - ${url}`);
@@ -111,7 +111,7 @@ export class CardsController {
     this.logtailService.log(`Deleting ${cardNumber} card for user ${user.name}, ${user.email} - ${url}`);
     return this.client.send({ cmd: 'delete_card' }, { id, cardNumber })
       .pipe(catchError(() => {
-        this.logtailService.error(`User ${user.name}, ${user.email} cannot delete the card ${cardNumber} - ${url}`, 'delete card');
+        this.logtailService.error(`User ${user.name}, ${user.email} cannot delete the card ${cardNumber} - ${url}`);
         throw new RpcException('Error deleting card');
       }));
   }
@@ -134,7 +134,7 @@ export class CardsController {
     const url = "http://" + req.headers['host'] + req.url;
     const card = await firstValueFrom(this.client.send({ cmd: 'update_card' }, { id, updateCardDto }))
       .catch(() => {
-        this.logtailService.error(`User ${user.name}, ${user.email} cannot delete the card ${updateCardDto.cardNumber} - ${url}`, 'update card');
+        this.logtailService.error(`User ${user.name}, ${user.email} cannot delete the card ${updateCardDto.cardNumber} - ${url}`);
         throw new RpcException('Card not found');
       });
     this.logtailService.log(`Updating ${updateCardDto.cardNumber} card for user ${user.name}, ${user.email} - ${url}`);

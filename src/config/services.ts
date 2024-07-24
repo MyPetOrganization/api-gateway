@@ -1,4 +1,5 @@
 export const USER_SERVICE = 'USER_SERVICE';
 export const CARDS_SERVICE = 'CARDS_SERVICE';
+export const PRODUCTS_SERVICE = 'PRODUCTS_SERVICE';
 
 export const NATS_SERVICE = 'NATS_SERVICE';

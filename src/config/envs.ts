@@ -35,7 +35,7 @@ const envsSchema = joi.object({
  */
 const { error, value } = envsSchema.validate({ 
     ...process.env,
-    NATS_SERVERS: process.env.NATS_SERVERS,
+    NATS_SERVERS: process.env.NATS_SERVER,
     CLIENT_URL: process.env.CLIENT_URL,
     LOGTAIL_TOKEN: process.env.LOGTAIL_TOKEN, 
 });

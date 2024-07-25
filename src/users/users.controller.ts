@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { catchError, firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, map } from 'rxjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -48,8 +48,21 @@ export class UsersController {
    */
   @UseGuards(AuthGuard)
   @Get()
-  findAllUsers() {
-    return this.client.send({ cmd: 'get_all_users' }, {})
+  async findAllUsers() {
+    const users = this.client.send({ cmd: 'get_all_users' }, {})
+      .pipe(
+        catchError(() => {
+          throw new RpcException('Error getting all users');
+        }),
+        map(users => {
+          // Eliminate the password and favoriteMovie fields from the response
+          return users.map(user => {
+            const { password, favoriteMovie, ...rest } = user; // Destructure the user object
+            return rest;
+          });
+        })
+      );
+    return users;
   }
 
   /**

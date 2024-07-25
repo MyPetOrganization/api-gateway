@@ -4,7 +4,7 @@ import { CreateCardDto } from './dto/create-cards.dto';
 import { UpdateCardDto } from './dto/update-cards.dto';
 import { NATS_SERVICE } from 'src/config';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { catchError, firstValueFrom, lastValueFrom, toArray } from 'rxjs';
+import { catchError, firstValueFrom, lastValueFrom, map, toArray } from 'rxjs';
 import { LogginService } from 'src/logging/logtail.service';
 
 /**
@@ -38,14 +38,16 @@ export class CardsController {
 
     // Create the card
     const card = await firstValueFrom(this.client.send({ cmd: 'create_card' }, { id, createCardDto }))
-      // .catch(() => {
-      //   this.logtailService.error(`${user.name} cannot create a card - ${url}`);
-      //   throw new RpcException('Cannot create a card');
-      // });
+      .catch(() => {
+        this.logtailService.error(`${user.name} cannot create a card - ${url}`);
+        throw new RpcException('Cannot create a card');
+      });
+
+    const { cvv, ...result } = card;
 
     // Log the creation in betterstack
     this.logtailService.log(`Creating a new card for user ${user.name} - ${url}`);
-    return card;
+    return result;
   }
 
   /**
@@ -63,11 +65,21 @@ export class CardsController {
     const user = await firstValueFrom(this.client.send({ cmd: 'get_one_user' }, { id }));
     const url = "http://" + req.headers['host'] + req.url;
     this.logtailService.log(`Getting all cards for user ${user.name}, ${user.email} - ${url}`);
-    return this.client.send({ cmd: 'get_all_cards' }, { id })
-      // .pipe(catchError(() => {
-      //   this.logtailService.error(`User ${user.name}, ${user.email} cannot get the cards - ${url}`);
-      //   throw new RpcException('Error getting cards');
-      // }));
+    const cards = this.client.send({ cmd: 'get_all_cards' }, { id })
+      .pipe(
+        catchError(() => {
+          this.logtailService.error(`User ${user.name}, ${user.email} cannot get the cards - ${url}`);
+          throw new RpcException('Error getting cards');
+        }),
+        map(cards => {
+          // Eliminate the CVV field from the cards
+          return cards.map(card => {
+            const { cvv, ...cardWithoutCvv } = card; // Destructure the card object
+            return cardWithoutCvv;
+          });
+        })
+      );
+    return cards;
   }
 
   /**
@@ -92,7 +104,8 @@ export class CardsController {
         throw new RpcException('Card not found');
       });
     this.logtailService.log(`Getting ${cardNumber} card for user ${user.name}, ${user.email} - ${url}`);
-    return card;
+    const { cvv, ...rest } = card;
+    return rest;
   }
 
   /**
@@ -102,6 +115,7 @@ export class CardsController {
    * @param cardNumber - The card number.
    * @returns A promise that resolves with the response of the deletion.
    */
+  @UseGuards(AuthGuard)
   @Delete(':id')
   async removeCard(
     @Req() req: Request,
@@ -140,7 +154,8 @@ export class CardsController {
         throw new RpcException('Card not found');
       });
     this.logtailService.log(`Updating ${updateCardDto.cardNumber} card for user ${user.name}, ${user.email} - ${url}`);
-    return card;
+    const { cvv, ...rest } = card;
+    return rest;
   }
 
 }

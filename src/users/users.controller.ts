@@ -43,29 +43,6 @@ export class UsersController {
   }
 
   /**
-   * Get all users.
-   * @returns A promise that resolves with the response of the retrieval.
-   */
-  @UseGuards(AuthGuard)
-  @Get()
-  async findAllUsers() {
-    const users = this.client.send({ cmd: 'get_all_users' }, {})
-      .pipe(
-        catchError(() => {
-          throw new RpcException('Error getting all users');
-        }),
-        map(users => {
-          // Eliminate the password and favoriteMovie fields from the response
-          return users.map(user => {
-            const { password, favoriteMovie, ...rest } = user; // Destructure the user object
-            return rest;
-          });
-        })
-      );
-    return users;
-  }
-
-  /**
    * Get one user.
    * @param id - The id of the user.
    * @returns A promise that resolves with the response of the retrieval.
